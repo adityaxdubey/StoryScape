@@ -1,0 +1,20 @@
+<!-- core/templates/core/story_detail.html -->
+{% extends "core/base.html" %}
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h1>{{ story.title }}</h1>
+        <p><strong>Author:</strong> {{ story.author }}</p>
+        <p><strong>Basic Premise:</strong> {{ story.basic_premise }}</p>
+        
+        <h3>Expanded Plot:</h3>
+        <pre class="mb-4">{{ story.expanded_plot }}</pre>
+        
+        <div class="btn-group">
+
+            <a href="{% url 'story_list' %}" 
+               class="btn btn-secondary">Back to Stories</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

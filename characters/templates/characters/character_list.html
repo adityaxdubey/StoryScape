@@ -1,0 +1,30 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h1>Characters</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Story</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for character in characters %}
+        <tr>
+            <td>{{ character.name }}</td>
+            <td>{{ character.role }}</td>
+            <td>{{ character.story.title }}</td>
+            <td>
+                <a href="{% url 'character_detail' character.id %}">View</a> |
+                <a href="{% url 'character_update' character.id %}">Edit</a> |
+                <a href="{% url 'character_delete' character.id %}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'character_create' %}" class="button">Add Character</a>
+{% endblock %}

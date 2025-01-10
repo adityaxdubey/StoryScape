@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}
+{% block content %}
+<h1>Create Story</h1>
+<form method="POST" action="{% url 'generate_story' %}">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="title" class="form-label">Story Title</label>
+        <input type="text" name="title" id="title" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="premise" class="form-label">Story Premise</label>
+        <textarea name="premise" id="premise" class="form-control" rows="4" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Generate Story</button>
+</form>
+{% endblock %}
