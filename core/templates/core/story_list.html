@@ -1,0 +1,14 @@
+{% extends "core/base.html" %}
+{% block content %}
+<h1>Stories</h1>
+<a href="{% url 'story_create' %}" class="btn btn-primary mb-3">Create New Story</a>
+<ul class="list-group">
+    {% for story in stories %}
+    <li class="list-group-item">
+        <a href="{% url 'story_detail' story.pk %}">{{ story.title }}</a>
+        <a href="{% url 'story_update' story.pk %}" class="btn btn-sm btn-warning float-end mx-2">Edit</a>
+        <a href="{% url 'story_delete' story.pk %}" class="btn btn-sm btn-danger float-end">Delete</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
