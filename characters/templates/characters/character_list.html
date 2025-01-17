@@ -1,30 +1,53 @@
-{% extends "core/base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
-<h1>Characters</h1>
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Story</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
+<div class="container mt-4">
+    <h2>Characters</h2>
+    
+    <!-- Character Generation Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Generate New Characters</h5>
+            <form method="post" action="{% url 'character-generate-characters' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="story_id">Story ID:</label>
+                    <input type="number" class="form-control" id="story_id" name="story_id" required>
+                </div>
+                <div class="form-group">
+                    <label for="plot">Plot:</label>
+                    <textarea class="form-control" id="plot" name="plot" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Generate Characters</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Character List -->
+    <div class="row">
         {% for character in characters %}
-        <tr>
-            <td>{{ character.name }}</td>
-            <td>{{ character.role }}</td>
-            <td>{{ character.story.title }}</td>
-            <td>
-                <a href="{% url 'character_detail' character.id %}">View</a> |
-                <a href="{% url 'character_update' character.id %}">Edit</a> |
-                <a href="{% url 'character_delete' character.id %}">Delete</a>
-            </td>
-        </tr>
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ character.name }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ character.role }}</h6>
+                    <p class="card-text">{{ character.background|truncatewords:30 }}</p>
+                    <h6>Goals:</h6>
+                    <p>{{ character.goals|truncatewords:20 }}</p>
+                    <h6>Personality Traits:</h6>
+                    <ul>
+                        {% for trait, value in character.personality_traits.items %}
+                        <li>{{ trait }}: {{ value }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p>No characters found.</p>
+        </div>
         {% endfor %}
-    </tbody>
-</table>
-<a href="{% url 'character_create' %}" class="button">Add Character</a>
+    </div>
+</div>
 {% endblock %}

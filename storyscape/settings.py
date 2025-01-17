@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,7 +29,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-GEMINI_API_KEY = 'AIzaSyBPRUn-5dUx-RGvIwswsRmqmAl_4Qmfruk'
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyBPRUn-5dUx-RGvIwswsRmqmAl_4Qmfruk')
 # Application definition
 
 INSTALLED_APPS = [
