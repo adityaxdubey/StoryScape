@@ -21,6 +21,9 @@ class CharacterGenerator:
         
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-pro')
+        
+        # Initialize Stable Diffusion pipeline
+        self.image_pipeline = None  # Lazy loading to save resources
 
     def generate_characters(self, plot: str) -> List[Dict]:
         """Generate characters based on the plot using Gemini API."""
@@ -37,6 +40,42 @@ class CharacterGenerator:
             
         except Exception as e:
             logger.error(f"Error generating characters: {str(e)}")
+            raise
+
+    def generate_character_image(self, character_data: Dict) -> str:
+        """Generate an image for a character based on their description."""
+        try:
+            if self.image_pipeline is None:
+                import torch
+                from diffusers import StableDiffusionPipeline
+                
+                self.image_pipeline = StableDiffusionPipeline.from_pretrained(
+                    "runwayml/stable-diffusion-v1-5",
+                    torch_dtype=torch.float16
+                ).to("cuda")
+                self.image_pipeline.enable_attention_slicing()
+                self.image_pipeline.enable_xformers_memory_efficient_attention()
+
+            # Create a detailed prompt from character data
+            prompt = self._create_image_prompt(character_data)
+            
+            # Generate the image
+            image = self.image_pipeline(
+                prompt=prompt,
+                guidance_scale=6.5,
+                num_inference_steps=25
+            ).images[0]
+            
+            # Save the image with character's name
+            safe_name = "".join(x for x in character_data['name'] if x.isalnum())
+            image_path = f"media/character_images/{safe_name}.png"
+            os.makedirs(os.path.dirname(image_path), exist_ok=True)
+            image.save(image_path)
+            
+            return image_path
+            
+        except Exception as e:
+            logger.error(f"Error generating character image: {str(e)}")
             raise
 
     def _create_character_prompt(self, plot: str) -> str:
@@ -117,3 +156,11 @@ class CharacterGenerator:
         except Exception as e:
             logger.error(f"Error validating character data: {str(e)}")
             return False
+
+    def _create_image_prompt(self, character_data: Dict) -> str:
+        """Create a detailed prompt for image generation based on character data."""
+        traits = ", ".join(character_data['personality_traits'].keys())
+        prompt = f"A portrait of {character_data['name']}, {character_data.get('physical_description', '')}. "
+        prompt += f"Their personality shows {traits}. {character_data['role']} character, ultra-realistic, "
+        prompt += "professional portrait photography, detailed facial features, high quality"
+        return prompt

@@ -32,14 +32,13 @@
                     <h5 class="card-title">{{ character.name }}</h5>
                     <h6 class="card-subtitle mb-2 text-muted">{{ character.role }}</h6>
                     <p class="card-text">{{ character.background|truncatewords:30 }}</p>
-                    <h6>Goals:</h6>
-                    <p>{{ character.goals|truncatewords:20 }}</p>
-                    <h6>Personality Traits:</h6>
-                    <ul>
-                        {% for trait, value in character.personality_traits.items %}
-                        <li>{{ trait }}: {{ value }}</li>
-                        {% endfor %}
-                    </ul>
+                    {% if character.image_url %}
+                    <img src="{{ character.image_url }}" alt="{{ character.name }}" class="img-fluid">
+                    {% endif %}
+                    <form method="post" action="{% url 'character-generate-image' character.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary mt-2">Generate Image</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -50,4 +49,88 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+function generateCharacterImage(button) {
+    const characterId = button.dataset.characterId;
+    button.disabled = true;
+    button.textContent = 'Generating...';
+
+    fetch(`/characters/${characterId}/generate-image/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.image_url) {
+            const imageContainer = button.parentElement;
+            const existingImage = imageContainer.querySelector('img');
+            if (existingImage) {
+                existingImage.src = data.image_url;
+            } else {
+                const img = document.createElement('img');
+                img.src = data.image_url;
+                img.alt = 'Generated character image';
+                img.className = 'character-image';
+                imageContainer.insertBefore(img, button);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to generate image. Please try again.');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.textContent = 'Generate Character Image';
+    });
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+<style>
+.character-card {
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin: 10px;
+    border-radius: 8px;
+}
+
+.character-image {
+    max-width: 300px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.generate-image-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.generate-image-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+</style>
 {% endblock %}

@@ -9,6 +9,9 @@ from .services.dialogue_generator import DialogueGenerator
 from django.shortcuts import render
 from django.contrib import messages
 import logging
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+
 logger = logging.getLogger(__name__)
 
 class CharacterViewSet(viewsets.ModelViewSet):
@@ -16,43 +19,44 @@ class CharacterViewSet(viewsets.ModelViewSet):
     serializer_class = CharacterSerializer
     permission_classes = [AllowAny]  
     
-    @action(detail=False, methods=['post'], url_path='generate-characters', permission_classes=[AllowAny])
+    @action(detail=False, methods=['get'])
     def generate_characters(self, request):
-        story_id = request.data.get('story_id')
-        plot = request.data.get('plot')
-        
-        if not all([story_id, plot]):
-            return Response(
-                {"error": "story_id and plot are required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
+        characters = self.get_queryset()
+        return render(request, 'characters/character_list.html', {
+            'characters': characters
+        })
+
+    @action(detail=True, methods=['post'])
+    def generate_image(self, request, pk=None):
         try:
-            generator = CharacterGenerator(story_id)
-            characters_data = generator.generate_characters(plot)
+            character = self.get_object()
+            generator = CharacterGenerator(character.story_id)
             
-            # Add the story to each character
-            for character_data in characters_data:
-                character_data['story'] = story_id
+            # Only include fields that exist in your Character model
+            character_data = {
+                'name': character.name,
+                'role': character.role,
+                'background': character.background,
+                'personality_traits': {
+                    'general': character.background[:100]  # Using a snippet of background as traits
+                }
+            }
             
-            # Save characters to database
-            serializer = CharacterSerializer(data=characters_data, many=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+            image_path = generator.generate_character_image(character_data)
             
-            return Response(serializer.data)
+            # Update character with image path
+            character.image_url = image_path
+            character.save()
             
-        except Story.DoesNotExist:
-            return Response(
-                {"error": f"Story with id {story_id} does not exist"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({
+                'success': True,
+                'image_url': image_path
+            })
         except Exception as e:
-            logger.error(f"Error generating characters: {str(e)}")
-            return Response(
-                {"error": "Failed to generate characters"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=400)
 
 class DialogueViewSet(viewsets.ModelViewSet):
     queryset = CharacterDialogue.objects.all()
@@ -79,8 +83,30 @@ class DialogueViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.data)
 
-def character_list(request):
-    characters = Character.objects.all()
-    return render(request, 'characters/character_list.html', {
-        'characters': characters
-    })
+@require_http_methods(["POST"])
+def generate_character_image(request, character_id):
+    try:
+        character = Character.objects.get(id=character_id)
+        generator = CharacterGenerator(character.story_id)
+        
+        character_data = {
+            'name': character.name,
+            'role': character.role,
+            'personality_traits': character.personality_traits,
+            'physical_description': character.physical_description,
+        }
+        
+        image_path = generator.generate_character_image(character_data)
+        
+        character.image_url = image_path
+        character.save()
+        
+        return JsonResponse({
+            'success': True,
+            'image_url': image_path
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)

@@ -4,9 +4,11 @@ from core.models import Story
 class Character(models.Model):
     story = models.ForeignKey(Story, on_delete=models.CASCADE, related_name='characters')
     name = models.CharField(max_length=100)
-    role = models.CharField(max_length=50)  # protagonist, antagonist, supporting
+    role = models.CharField(max_length=100)  # protagonist, antagonist, supporting
     personality_traits = models.JSONField()  # Store personality traits as JSON
     background = models.TextField()
+    physical_description = models.TextField(blank=True, null=True)
+    image_url = models.CharField(max_length=255, blank=True, null=True)
     goals = models.TextField()
     relationships = models.JSONField()  # Store relationships with other characters
     created_at = models.DateTimeField(auto_now_add=True)
